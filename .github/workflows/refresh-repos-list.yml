@@ -13,8 +13,6 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     env:
-      # Used by gh CLI to access private repos during listing
-      GH_TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
       # Hard-coded input per agreed minimal design
       USERS: "disafronov"
       PATTERN: "^disafronov/ansible_role-"
@@ -23,6 +21,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build repos.list (own, non-fork, non-archived, incl. private)
+        env:
+          # Use PAT only for listing repositories (private access)
+          GH_TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
