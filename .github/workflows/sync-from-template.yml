@@ -67,11 +67,19 @@ jobs:
         run: |
           rm -rf template/.git
 
-      - name: Upload template artifact
+      - name: List template contents (prepare)
+        shell: bash
+        run: |
+          echo "Template contents (top-level):"
+          ls -la template || true
+          echo "Template dirs (depth<=2):"
+          find template -maxdepth 2 -type d -print || true
+
+      - name: Upload template artifact (contents only)
         uses: actions/upload-artifact@v4
         with:
           name: template-bundle
-          path: template/
+          path: template/*
           if-no-files-found: error
           retention-days: 7
 
@@ -103,6 +111,14 @@ jobs:
         with:
           name: template-bundle
           path: template
+
+      - name: List template contents (sync)
+        shell: bash
+        run: |
+          echo "Downloaded template contents (top-level):"
+          ls -la template || true
+          echo "Template dirs (depth<=2):"
+          find template -maxdepth 2 -type d -print || true
 
       - name: Checkout target repository (default branch)
         uses: actions/checkout@v4
