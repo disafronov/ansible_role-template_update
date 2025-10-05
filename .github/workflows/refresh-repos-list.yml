@@ -63,5 +63,3 @@ jobs:
             repos.list
           signoff: false
           delete-branch: false
-
-
