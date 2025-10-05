@@ -84,7 +84,7 @@ jobs:
             echo "roles.list has no usable entries" >&2
             exit 1
           fi
-          JSON_ARRAY=$(printf '%s\n' "${LINES[@]}" | jq -R . | jq -s .)
+          JSON_ARRAY=$(printf '%s\n' "${LINES[@]}" | jq -R . | jq -c -s .)
           echo "roles_matrix=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
 
   sync-roles:
