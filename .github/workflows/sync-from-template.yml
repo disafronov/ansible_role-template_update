@@ -5,6 +5,9 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   TEMPLATE_REPO: disafronov/ansible_role-template
 
@@ -87,6 +90,7 @@ jobs:
     needs: prepare-template
     strategy:
       fail-fast: false
+    
       matrix:
         role: ${{ fromJson(needs.prepare-template.outputs.roles_matrix) }}
     steps:
