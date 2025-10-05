@@ -38,10 +38,11 @@ jobs:
             echo "delete.list not found; deletion step will be skipped"
           fi
 
-      - name: Clone template repository
-        shell: bash
-        run: |
-          git clone https://github.com/${{ env.TEMPLATE_REPO }}.git template
+      - name: Checkout template repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TEMPLATE_REPO }}
+          path: template
 
       - name: Determine latest semver tag and checkout
         id: get-tag
@@ -98,20 +99,12 @@ jobs:
           name: template-bundle
           path: template
 
-      - name: Clone role repository (default branch)
-        shell: bash
-        env:
-          ROLE: ${{ matrix.role }}
-          TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
-        run: |
-          rm -rf role
-          OWNER=$(echo "$ROLE" | cut -d'/' -f1)
-          REPO=$(echo "$ROLE" | cut -d'/' -f2)
-          if [[ -z "$TOKEN" ]]; then
-            echo "ROLE_UPDATE_TOKEN is required" >&2
-            exit 1
-          fi
-          git clone "https://${TOKEN}@github.com/${OWNER}/${REPO}.git" role
+      - name: Checkout role repository (default branch)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.role }}
+          path: role
+          token: ${{ secrets.ROLE_UPDATE_TOKEN }}
 
       - name: Apply updates from template per update.list
         shell: bash
