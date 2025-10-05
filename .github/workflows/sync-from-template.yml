@@ -131,18 +131,18 @@ jobs:
             rm -rfv "repo/$path" || true
           done < delete.list
 
-      - name: Commit and push changes if any
+      - name: Commit and push changes
         shell: bash
         env:
           TEMPLATE_TAG: ${{ needs.prepare-template.outputs.template_tag }}
         run: |
           cd repo
-          if git diff --quiet; then
+          git add -A
+          if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
           git config user.name "ansible-role-updater[bot]"
           git config user.email "ansible-role-updater[bot]@users.noreply.github.com"
-          git add -A
           git commit -m "chore: sync from template ${TEMPLATE_TAG}"
           git push origin HEAD
