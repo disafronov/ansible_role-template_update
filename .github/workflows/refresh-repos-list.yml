@@ -61,5 +61,5 @@ jobs:
           body: Automated refresh of repos.list
           add-paths: |
             repos.list
-          signoff: false
-          delete-branch: false
+          signoff: true
+          delete-branch: true
