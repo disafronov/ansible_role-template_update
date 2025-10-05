@@ -1,0 +1,67 @@
+name: Refresh repos.list
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      # Used by gh CLI to access private repos during listing
+      GH_TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
+      # Hard-coded input per agreed minimal design
+      USERS: "disafronov"
+      PATTERN: "^disafronov/ansible_role-"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build repos.list (own, non-fork, non-archived, incl. private)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tmp="$(mktemp)"; : > "$tmp"
+
+          # Collect user's repositories (type=owner), private included via ROLE_UPDATE_TOKEN
+          for user in $USERS; do
+            gh api -H "Accept: application/vnd.github+json" \
+              "/users/${user}/repos?type=owner&per_page=100" --paginate \
+              --jq '.[] | select(.fork==false and .archived==false) | .full_name'
+          done >> "$tmp"
+
+          # Hard exclusions
+          EXCLUDE_1="disafronov/ansible_role-template"
+          EXCLUDE_2="${GITHUB_REPOSITORY}"
+
+          # Filter by pattern, apply exclusions, sort unique
+          grep -E "${PATTERN}" "$tmp" \
+            | grep -v -x -e "${EXCLUDE_1}" -e "${EXCLUDE_2}" \
+            | sort -u > repos.list
+
+          # Ensure trailing newline even for empty file
+          if [ ! -s repos.list ] || [ -n "$(tail -c1 repos.list || true)" ]; then echo >> repos.list; fi
+
+          printf "Wrote %s repos to repos.list\n" "$(wc -l < repos.list)"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # Use GITHUB_TOKEN for PR creation in this repository
+          branch: refresh-repos-list
+          base: main
+          commit-message: "chore(repos): refresh repos.list"
+          title: "chore(repos): refresh repos.list"
+          body: Automated refresh of repos.list
+          add-paths: |
+            repos.list
+          signoff: false
+          delete-branch: false
+
+
