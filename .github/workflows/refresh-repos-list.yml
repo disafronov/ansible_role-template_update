@@ -54,7 +54,6 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
-          # Use GITHUB_TOKEN for PR creation in this repository
           branch: refresh-repos-list
           base: main
           commit-message: "chore(repos): refresh repos.list"
