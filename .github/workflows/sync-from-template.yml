@@ -110,7 +110,7 @@ jobs:
         with:
           repository: ${{ matrix.repo }}
           path: repo
-          token: ${{ secrets.ROLE_UPDATE_TOKEN }}
+          token: ${{ secrets.REPO_UPDATE_TOKEN }}
 
       - name: Apply updates from template per update.list
         shell: bash

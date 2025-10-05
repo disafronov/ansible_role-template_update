@@ -23,7 +23,7 @@ jobs:
       - name: Build repos.list (own, non-fork, non-archived, incl. private)
         env:
           # Use PAT only for listing repositories (private access)
-          GH_TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_UPDATE_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
