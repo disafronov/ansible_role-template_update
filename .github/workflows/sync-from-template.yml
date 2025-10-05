@@ -75,11 +75,12 @@ jobs:
           echo "Template dirs (depth<=2):"
           find template -maxdepth 2 -type d -print || true
 
-      - name: Upload template artifact (contents only)
+      - name: Upload template artifact (include hidden files)
         uses: actions/upload-artifact@v4
         with:
           name: template-bundle
-          path: template/*
+          path: template
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
 
