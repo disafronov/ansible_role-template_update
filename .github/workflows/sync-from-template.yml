@@ -46,6 +46,8 @@ jobs:
         with:
           repository: ${{ env.TEMPLATE_REPO }}
           path: template
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Determine latest semver tag and checkout
         id: get-tag
