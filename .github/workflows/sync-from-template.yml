@@ -1,0 +1,149 @@
+name: Sync workflows from template
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  TEMPLATE_REPO: disafronov/ansible_role-template
+
+jobs:
+  prepare-template:
+    runs-on: ubuntu-latest
+    outputs:
+      template_tag: ${{ steps.get-tag.outputs.template_tag }}
+      roles_matrix: ${{ steps.roles.outputs.roles_matrix }}
+    steps:
+      - name: Checkout updater repository
+        uses: actions/checkout@v4
+
+      - name: Verify required lists exist and are non-empty
+        id: verify
+        shell: bash
+        run: |
+          if [[ ! -s roles.list ]]; then
+            echo "roles.list not found or empty" >&2
+            exit 1
+          fi
+          if [[ ! -s update.list ]]; then
+            echo "update.list not found or empty" >&2
+            exit 1
+          fi
+          if [[ -f delete.list ]]; then
+            if [[ ! -s delete.list ]]; then
+              echo "delete.list is empty; deletion step will be skipped"
+            fi
+          else
+            echo "delete.list not found; deletion step will be skipped"
+          fi
+
+      - name: Clone template repository
+        shell: bash
+        run: |
+          git clone https://github.com/${{ env.TEMPLATE_REPO }}.git template
+
+      - name: Determine latest semver tag and checkout
+        id: get-tag
+        shell: bash
+        run: |
+          cd template
+          LATEST_TAG=$(git tag | grep -E '^v[0-9]+(\.[0-9]+){1,2}$' | sort -V | tail -n 1)
+          if [[ -z "$LATEST_TAG" ]]; then
+            echo "No semver tags found matching ^vX.Y[.Z]" >&2
+            exit 1
+          fi
+          git checkout "$LATEST_TAG"
+          echo "template_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Remove template .git directory
+        shell: bash
+        run: |
+          rm -rf template/.git
+
+      - name: Upload template artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-bundle
+          path: template/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Build roles matrix from roles.list
+        id: roles
+        shell: bash
+        run: |
+          mapfile -t LINES < <(grep -vE '^\s*(#|$)' roles.list)
+          if [[ ${#LINES[@]} -eq 0 ]]; then
+            echo "roles.list has no usable entries" >&2
+            exit 1
+          fi
+          JSON_ARRAY=$(printf '%s\n' "${LINES[@]}" | jq -R . | jq -s .)
+          echo "roles_matrix=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
+
+  sync-roles:
+    runs-on: ubuntu-latest
+    needs: prepare-template
+    strategy:
+      fail-fast: false
+      matrix:
+        role: ${{ fromJson(needs.prepare-template.outputs.roles_matrix) }}
+    steps:
+      - name: Checkout updater repository
+        uses: actions/checkout@v4
+
+      - name: Download template artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: template-bundle
+          path: template
+
+      - name: Clone role repository (default branch)
+        shell: bash
+        env:
+          ROLE: ${{ matrix.role }}
+          TOKEN: ${{ secrets.ROLE_UPDATE_TOKEN }}
+        run: |
+          rm -rf role
+          OWNER=$(echo "$ROLE" | cut -d'/' -f1)
+          REPO=$(echo "$ROLE" | cut -d'/' -f2)
+          if [[ -z "$TOKEN" ]]; then
+            echo "ROLE_UPDATE_TOKEN is required" >&2
+            exit 1
+          fi
+          git clone "https://${TOKEN}@github.com/${OWNER}/${REPO}.git" role
+
+      - name: Apply updates from template per update.list
+        shell: bash
+        run: |
+          rsync -av \
+            --include-from=update.list \
+            --exclude='*' \
+            --delete-after \
+            template/ \
+            role/
+
+      - name: Apply deletions per delete.list (if present)
+        if: hashFiles('delete.list') != ''
+        shell: bash
+        run: |
+          while IFS= read -r path || [[ -n "$path" ]]; do
+            [[ -z "$path" || "$path" =~ ^\s*# ]] && continue
+            rm -rf "role/$path" || true
+          done < delete.list
+
+      - name: Commit and push changes if any
+        shell: bash
+        env:
+          TEMPLATE_TAG: ${{ needs.prepare-template.outputs.template_tag }}
+        run: |
+          cd role
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "ansible-role-updater[bot]"
+          git config user.email "ansible-role-updater[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(workflows): sync from template ${TEMPLATE_TAG}"
+          git push origin HEAD
