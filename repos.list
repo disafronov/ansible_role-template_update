@@ -3,7 +3,6 @@ disafronov/ansible_role-docker
 disafronov/ansible_role-docker_clean
 disafronov/ansible_role-docker_compose_service
 disafronov/ansible_role-docker_extra_service
-disafronov/ansible_role-e1000e_watchdog
 disafronov/ansible_role-essential
 disafronov/ansible_role-fail2ban
 disafronov/ansible_role-firewalld
