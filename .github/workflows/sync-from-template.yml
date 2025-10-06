@@ -8,8 +8,6 @@ on:
 permissions:
   contents: read
 
-# Template repository will be read from template.repo file
-
 jobs:
   prepare-template:
     runs-on: ubuntu-latest
@@ -24,20 +22,20 @@ jobs:
         id: verify
         shell: bash
         run: |
-          if [[ ! -s repos.list ]]; then
-            echo "repos.list not found or empty" >&2
-            exit 1
-          fi
-          if [[ ! -s update.list ]]; then
-            echo "update.list not found or empty" >&2
-            exit 1
-          fi
           if [[ ! -s template.repo ]]; then
             echo "template.repo not found or empty" >&2
             exit 1
           fi
           if [[ $(wc -l < template.repo) -ne 1 ]]; then
             echo "template.repo must contain exactly one line" >&2
+            exit 1
+          fi
+          if [[ ! -s repos.list ]]; then
+            echo "repos.list not found or empty" >&2
+            exit 1
+          fi
+          if [[ ! -s update.list ]]; then
+            echo "update.list not found or empty" >&2
             exit 1
           fi
           if [[ -f delete.list ]]; then
