@@ -145,7 +145,7 @@ jobs:
             repo/
 
       - name: Apply deletions per delete.list (if present)
-        if: hashFiles('delete.list') != ''
+        if: ${{ hashFiles('delete.list') != '' }}
         shell: sh
         run: |
           while IFS= read -r raw || [ -n "$raw" ]; do
