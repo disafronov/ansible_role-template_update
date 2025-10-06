@@ -151,7 +151,7 @@ jobs:
           while IFS= read -r raw || [ -n "$raw" ]; do
             path=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//')
             case "$path" in ''|'#'*) continue ;; esac
-            rm -rf -- "repo/$path" || true
+            rm -rfv -- "repo/$path" || true
           done < delete.list
 
       - name: Commit and push changes
