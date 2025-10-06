@@ -20,6 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify template.repo
+        shell: bash
+        run: |
+          if [[ ! -s template.repo ]]; then
+            echo "template.repo not found or empty" >&2
+            exit 1
+          fi
+          if [[ $(wc -l < template.repo) -ne 1 ]]; then
+            echo "template.repo must contain exactly one line" >&2
+            exit 1
+          fi
+
       - name: Build repos.list (own, non-fork, non-archived, incl. private)
         env:
           # Use PAT only for listing repositories (private access)
