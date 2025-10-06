@@ -148,6 +148,7 @@ jobs:
         if: ${{ hashFiles('delete.list') != '' }}
         shell: sh
         run: |
+          set -eu
           while IFS= read -r raw || [ -n "$raw" ]; do
             path=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//')
             case "$path" in ''|'#'*) continue ;; esac
