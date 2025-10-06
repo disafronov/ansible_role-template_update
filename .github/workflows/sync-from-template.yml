@@ -20,26 +20,26 @@ jobs:
 
       - name: Verify required files exist and are valid
         id: verify
-        shell: bash
+        shell: sh
         run: |
-          if [[ ! -s template.repo ]]; then
+          if [ ! -s template.repo ]; then
             echo "template.repo not found or empty" >&2
             exit 1
           fi
-          if [[ $(wc -l < template.repo) -ne 1 ]]; then
+          if [ "$(wc -l < template.repo)" -ne 1 ]; then
             echo "template.repo must contain exactly one line" >&2
             exit 1
           fi
-          if [[ ! -s repos.list ]]; then
+          if [ ! -s repos.list ]; then
             echo "repos.list not found or empty" >&2
             exit 1
           fi
-          if [[ ! -s include.list ]]; then
+          if [ ! -s include.list ]; then
             echo "include.list not found or empty" >&2
             exit 1
           fi
-          if [[ -f delete.list ]]; then
-            if [[ ! -s delete.list ]]; then
+          if [ -f delete.list ]; then
+            if [ ! -s delete.list ]; then
               echo "delete.list is empty; deletion step will be skipped"
             fi
           else
@@ -48,6 +48,7 @@ jobs:
 
       - name: Read template repository
         id: template
+        shell: sh
         run: echo "template_repo=$(cat template.repo)" >> $GITHUB_OUTPUT
 
       - name: Checkout template repository
@@ -60,11 +61,11 @@ jobs:
 
       - name: Determine latest semver tag and checkout
         id: get-tag
-        shell: bash
+        shell: sh
         run: |
           cd template
-          LATEST_TAG=$(git tag | grep -E '^v[0-9]+(\.[0-9]+){1,2}$' | sort -V | tail -n 1)
-          if [[ -z "$LATEST_TAG" ]]; then
+          LATEST_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
             echo "No semver tags found matching ^vX.Y[.Z]" >&2
             exit 1
           fi
@@ -72,7 +73,7 @@ jobs:
           echo "template_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Remove template .git directory
-        shell: bash
+        shell: sh
         run: |
           rm -rf template/.git
 
@@ -128,7 +129,7 @@ jobs:
           token: ${{ secrets.REPO_UPDATE_TOKEN }}
 
       - name: Apply updates from template per include.list
-        shell: bash
+        shell: sh
         run: |
           rsync -av \
             --include-from=include.list \
@@ -139,15 +140,16 @@ jobs:
 
       - name: Apply deletions per delete.list (if present)
         if: hashFiles('delete.list') != ''
-        shell: bash
+        shell: sh
         run: |
-          while IFS= read -r path || [[ -n "$path" ]]; do
-            [[ -z "$path" || "$path" =~ ^\s*# ]] && continue
-            rm -rfv "repo/$path" || true
+          while IFS= read -r raw || [ -n "$raw" ]; do
+            path=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//')
+            case "$path" in ''|'#'*) continue ;; esac
+            rm -rf -- "repo/$path" || true
           done < delete.list
 
       - name: Commit and push changes
-        shell: bash
+        shell: sh
         env:
           TEMPLATE_TAG: ${{ needs.prepare-template.outputs.template_tag }}
         run: |
