@@ -166,7 +166,7 @@ jobs:
             echo "No changes to commit"
             exit 0
           fi
-          git config user.name "ansible-role-updater[bot]"
-          git config user.email "ansible-role-updater[bot]@users.noreply.github.com"
+          git config user.name "ansible-repo-updater[bot]"
+          git config user.email "ansible-repo-updater[bot]@users.noreply.github.com"
           git commit -m "chore: sync from template ${TEMPLATE_TAG}"
           git push origin HEAD
