@@ -49,15 +49,11 @@ jobs:
               --jq '.[] | select(.fork==false and .archived==false) | .full_name'
           done >> "$tmp"
 
-          # Hard exclusions
-          EXCLUDE_1="$(cat template.repo)"
-          EXCLUDE_2="${GITHUB_REPOSITORY}"
-
           # Filter by pattern, apply exclusions, sort unique
           grep -E "${PATTERN}" "$tmp" \
             | grep -F -x -v \
-                -e "${EXCLUDE_1}" \
-                -e "${EXCLUDE_2}" \
+                -e "$(cat template.repo)" \
+                -e "${{ github.repository }}" \
             | sort -u > repos.list
 
           # Ensure trailing newline even for empty file
