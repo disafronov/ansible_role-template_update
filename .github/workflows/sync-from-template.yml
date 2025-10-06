@@ -90,11 +90,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TEMPLATE_REPO="${{ steps.template.outputs.template_repo }}"
-          CURRENT_REPO="${{ github.repository }}"
           mapfile -t LINES < <(
             grep -vE '^[[:space:]]*(#|$)' repos.list \
-              | grep -v -x -e "${TEMPLATE_REPO}" -e "${CURRENT_REPO}"
+              | grep -v -x \
+                  -e "${{ steps.template.outputs.template_repo }}" \
+                  -e "${{ github.repository }}"
           )
           if [[ ${#LINES[@]} -eq 0 ]]; then
             echo "repos.list has no usable entries after exclusions" >&2
