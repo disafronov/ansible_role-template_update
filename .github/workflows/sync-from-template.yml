@@ -92,7 +92,7 @@ jobs:
           set -euo pipefail
           mapfile -t LINES < <(
             grep -vE '^[[:space:]]*(#|$)' repos.list \
-              | grep -v -x \
+              | grep -F -v -x \
                   -e "${{ steps.template.outputs.template_repo }}" \
                   -e "${{ github.repository }}"
           )
