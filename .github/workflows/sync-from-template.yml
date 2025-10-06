@@ -88,20 +88,26 @@ jobs:
 
       - name: Build repos matrix from repos.list
         id: repos
-        shell: bash
+        shell: sh
         run: |
-          set -euo pipefail
-          mapfile -t LINES < <(
-            grep -vE '^[[:space:]]*(#|$)' repos.list \
-              | grep -F -v -x \
-                  -e "${{ steps.template.outputs.template_repo }}" \
-                  -e "${{ github.repository }}"
-          )
-          if [[ ${#LINES[@]} -eq 0 ]]; then
+          set -eu
+          tmp="$(mktemp)"; : > "$tmp"
+
+          # filter: drop comments/empty, exclude template and self
+          grep -vE '^[[:space:]]*(#|$)' repos.list \
+            | grep -F -v -x \
+                -e "${{ steps.template.outputs.template_repo }}" \
+                -e "${{ github.repository }}" \
+            > "$tmp" || true
+
+          # fail if empty after exclusions
+          if [ "$(wc -l < "$tmp")" -eq 0 ]; then
             echo "repos.list has no usable entries after exclusions" >&2
             exit 1
           fi
-          JSON_ARRAY=$(printf '%s\n' "${LINES[@]}" | jq -R . | jq -c -s .)
+
+          # build JSON array
+          JSON_ARRAY=$(jq -R . < "$tmp" | jq -c -s .)
           echo "repos_matrix=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
 
   sync-repos:
