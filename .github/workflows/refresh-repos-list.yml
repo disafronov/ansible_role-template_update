@@ -56,10 +56,11 @@ jobs:
                 -e "${{ github.repository }}" \
             | sort -u > repos.list
 
-          # Ensure trailing newline even for empty file
-          if [ ! -s repos.list ] || [ -n "$(tail -c1 repos.list || true)" ]; then echo >> repos.list; fi
-
-          printf "Wrote %s repos to repos.list\n" "$(wc -l < repos.list)"
+          # Fail if repos.list is empty (after excluding template and self repo)
+          if [ "$(wc -l < repos.list)" -eq 0 ]; then
+            echo "repos.list is empty (no repos matched [${PATTERN}] after excluding [$(cat template.repo)] and [${{ github.repository }}])" >&2
+            exit 1
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
