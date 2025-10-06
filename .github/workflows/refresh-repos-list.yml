@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Hard-coded input per agreed minimal design
-      USERS: "disafronov"
       PATTERN: "^disafronov/ansible_role-"
     steps:
       - name: Checkout
@@ -42,12 +41,11 @@ jobs:
 
           tmp="$(mktemp)"; : > "$tmp"
 
-          # Collect user's repositories (type=owner), private included via REPO_UPDATE_TOKEN
-          for user in $USERS; do
-            gh api -H "Accept: application/vnd.github+json" \
-              "/users/${user}/repos?type=owner&per_page=100" --paginate \
-              --jq '.[] | select(.fork==false and .archived==false) | .full_name'
-          done >> "$tmp"
+          # Collect repositories of the authenticated user (owner: private and public)
+          gh api -H "Accept: application/vnd.github+json" \
+            "/user/repos?affiliation=owner&visibility=all&per_page=100" --paginate \
+            --jq '.[] | select(.fork==false and .archived==false) | .full_name' \
+            >> "$tmp"
 
           # Filter by pattern, apply exclusions, sort unique
           grep -E "${PATTERN}" "$tmp" \
