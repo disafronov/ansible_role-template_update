@@ -50,12 +50,14 @@ jobs:
           done >> "$tmp"
 
           # Hard exclusions
-          EXCLUDE_1="disafronov/ansible_role-template"
+          EXCLUDE_1="$(cat template.repo)"
           EXCLUDE_2="${GITHUB_REPOSITORY}"
 
           # Filter by pattern, apply exclusions, sort unique
           grep -E "${PATTERN}" "$tmp" \
-            | grep -v -x -e "${EXCLUDE_1}" -e "${EXCLUDE_2}" \
+            | grep -F -x -v \
+                -e "${EXCLUDE_1}" \
+                -e "${EXCLUDE_2}" \
             | sort -u > repos.list
 
           # Ensure trailing newline even for empty file
