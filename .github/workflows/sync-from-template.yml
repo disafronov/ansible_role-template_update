@@ -63,13 +63,13 @@ jobs:
         id: get-tag
         shell: sh
         run: |
-          cd template
-          LATEST_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+          # Strict SemVer (MAJOR.MINOR.PATCH) without pre-release/build
+          LATEST_TAG=$(git -C template tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           if [ -z "$LATEST_TAG" ]; then
-            echo "No semver tags found matching ^vX.Y[.Z]" >&2
+            echo "No SemVer tags vMAJOR.MINOR.PATCH found" >&2
             exit 1
           fi
-          git checkout "$LATEST_TAG"
+          git -C template checkout "$LATEST_TAG"
           echo "template_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Remove template .git directory
