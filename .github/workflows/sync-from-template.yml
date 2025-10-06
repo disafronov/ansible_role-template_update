@@ -8,8 +8,7 @@ on:
 permissions:
   contents: read
 
-env:
-  TEMPLATE_REPO: disafronov/ansible_role-template
+# Template repository will be read from template.repo file
 
 jobs:
   prepare-template:
@@ -21,7 +20,7 @@ jobs:
       - name: Checkout updater repository
         uses: actions/checkout@v4
 
-      - name: Verify required lists exist and are non-empty
+      - name: Verify required files exist and are valid
         id: verify
         shell: bash
         run: |
@@ -33,6 +32,14 @@ jobs:
             echo "update.list not found or empty" >&2
             exit 1
           fi
+          if [[ ! -s template.repo ]]; then
+            echo "template.repo not found or empty" >&2
+            exit 1
+          fi
+          if [[ $(wc -l < template.repo) -ne 1 ]]; then
+            echo "template.repo must contain exactly one line" >&2
+            exit 1
+          fi
           if [[ -f delete.list ]]; then
             if [[ ! -s delete.list ]]; then
               echo "delete.list is empty; deletion step will be skipped"
@@ -41,10 +48,14 @@ jobs:
             echo "delete.list not found; deletion step will be skipped"
           fi
 
+      - name: Read template repository
+        id: template
+        run: echo "template_repo=$(cat template.repo)" >> $GITHUB_OUTPUT
+
       - name: Checkout template repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ env.TEMPLATE_REPO }}
+          repository: ${{ steps.template.outputs.template_repo }}
           path: template
           fetch-depth: 0
           fetch-tags: true
