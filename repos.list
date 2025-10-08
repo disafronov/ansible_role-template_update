@@ -19,6 +19,6 @@ disafronov/ansible_role-ssl_refresher
 disafronov/ansible_role-systemd_journald
 disafronov/ansible_role-systemd_resolved
 disafronov/ansible_role-template
-disafronov/ansible_role-template_update
+disafronov/ansible_role-template_sync
 disafronov/ansible_role-unattended_upgrades
 disafronov/ansible_role-wireguard
